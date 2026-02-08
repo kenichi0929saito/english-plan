@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English Daily Plan</title>
+<style>
+body{margin:0;font-family:-apple-system;background:#0f1220;color:#fff}
+.card{margin:12px;padding:14px;border-radius:12px;background:#181c33}
+h1{font-size:18px;margin:0}
+h2{font-size:14px;color:#bfc6ff}
+.task{margin:8px 0;padding:10px;border:1px solid #2b3160;border-radius:10px}
+.done{opacity:.4;text-decoration:line-through}
+button{width:100%;padding:10px;border-radius:10px;border:none;background:#4f6bff;color:#fff;font-weight:600}
+.small{font-size:12px;color:#bfc6ff}
+</style>
+
+<body>
+<div class="card">
+<h1>今日の英語（3h）</h1>
+<div class="small" id="date"></div>
+</div>
+
+<div class="card">
+<h2>朝 1h</h2>
+<div class="task" onclick="toggle(this)">Duolingo 15分</div>
+<div class="task" onclick="toggle(this)">パタプラ 30分（シャドー）</div>
+<div class="task" onclick="toggle(this)">独り言 15分（今日のテーマ）</div>
+</div>
+
+<div class="card">
+<h2>昼 30分</h2>
+<div class="task" onclick="toggle(this)">瞬発：日本語→英語（止まらない）</div>
+</div>
+
+<div class="card">
+<h2>夜 1.5h</h2>
+<div class="task" onclick="toggle(this)">英会話 30–40分（説明系）</div>
+<div class="task" onclick="toggle(this)">録音レビュー＋言い直し</div>
+</div>
+
+<div class="card">
+<button onclick="reset()">今日をリセット</button>
+</div>
+
+<script>
+const d=new Date();
+document.getElementById("date").innerText=d.toLocaleDateString();
+document.querySelectorAll(".task").forEach((t,i)=>{
+ if(localStorage["t"+i]) t.classList.add("done");
+ t.onclick=()=>{t.classList.toggle("done");localStorage["t"+i]=t.classList.contains("done")}
+});
+function reset(){localStorage.clear();location.reload()}
+</script>
+</body>
+</html>
