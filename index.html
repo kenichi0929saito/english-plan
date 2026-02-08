@@ -1,56 +1,87 @@
 <!doctype html>
 <html lang="ja">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>English Daily Plan</title>
-<style>
-body{margin:0;font-family:-apple-system;background:#0f1220;color:#fff}
-.card{margin:12px;padding:14px;border-radius:12px;background:#181c33}
-h1{font-size:18px;margin:0}
-h2{font-size:14px;color:#bfc6ff}
-.task{margin:8px 0;padding:10px;border:1px solid #2b3160;border-radius:10px}
-.done{opacity:.4;text-decoration:line-through}
-button{width:100%;padding:10px;border-radius:10px;border:none;background:#4f6bff;color:#fff;font-weight:600}
-.small{font-size:12px;color:#bfc6ff}
-</style>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>English Plan</title>
+  <style>
+    body{margin:0;font-family:-apple-system,system-ui;background:#0f1220;color:#fff}
+    .card{margin:12px;padding:14px;border-radius:12px;background:#181c33}
+    h1{font-size:18px;margin:0}
+    h2{font-size:14px;color:#bfc6ff;margin:0 0 10px}
+    .small{font-size:12px;color:#bfc6ff;line-height:1.35}
+    .task{margin:8px 0;padding:10px;border:1px solid #2b3160;border-radius:10px}
+    .done{opacity:.45;text-decoration:line-through}
+    button{width:100%;padding:10px;border-radius:10px;border:none;background:#4f6bff;color:#fff;font-weight:700}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #2b3160;font-size:12px;color:#bfc6ff}
+  </style>
+</head>
 
 <body>
-<div class="card">
-<h2>今週のテーマ</h2>
-<div id="week"></div>
-</div>
-<div class="card">
-<h1>今日の英語（3h）</h1>
-<div class="small" id="date"></div>
-</div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1>English Plan</h1>
+        <div class="small" id="date"></div>
+      </div>
+      <div class="pill" id="achieveBadge">—</div>
+    </div>
+    <div class="small" style="margin-top:10px">
+      今週のテーマ：<b id="week"></b>
+    </div>
+    <div class="small" style="margin-top:8px">
+      連続達成: <b id="streak">0</b> 日 / 累計達成日: <b id="totalDays">0</b> 日（朝＋夜で達成）
+    </div>
+  </div>
 
-<div class="card">
-<h2>朝 1h</h2>
-<div class="task" onclick="toggle(this)">Duolingo 15分</div>
-<div class="task" onclick="toggle(this)">パタプラ 30分（シャドー）</div>
-<div class="task" onclick="toggle(this)">独り言 15分（今日のテーマ）</div>
-</div>
+  <div class="card">
+    <h2>朝 1h（達成条件）</h2>
+    <div class="task" data-task="duo">Duolingo 15分</div>
+    <div class="task" data-task="pata">パタプラ 30分（シャドー）</div>
+    <div class="task" data-task="solo">独り言 15分（今日のテーマ）</div>
+  </div>
 
-<div class="card">
-<h2>昼 30分</h2>
-<div class="task" onclick="toggle(this)">瞬発：日本語→英語（止まらない）</div>
-</div>
+  <div class="card">
+    <h2>昼 30分（任意）</h2>
+    <div class="task" data-task="quick">瞬発：日本語→英語（止まらない）</div>
+  </div>
 
-<div class="card">
-<h2>夜 1.5h</h2>
-<div class="task" onclick="toggle(this)">英会話 30–40分（説明系）</div>
-<div class="task" onclick="toggle(this)">録音レビュー＋言い直し</div>
-</div>
+  <div class="card">
+    <h2>夜 1.5h（達成条件）</h2>
+    <div class="task" data-task="talk">英会話 30–40分（説明系）</div>
+    <div class="task" data-task="review">録音レビュー＋言い直し</div>
+  </div>
 
-<div class="card">
-<button onclick="reset()">今日をリセット</button>
-</div>
+  <div class="card">
+    <button id="resetBtn">今日をリセット（今日だけ）</button>
+    <div class="small" style="margin-top:8px">
+      ※過去の履歴は消えません（今日のチェックのみ初期化）
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>記録（直近14日）</h2>
+    <div class="small" id="stats"></div>
+    <div id="history"></div>
+    <div class="small" style="margin-top:10px">
+      行をタップすると、その日の✅/⬜️の内訳が見られます。
+    </div>
+  </div>
 
 <script>
-const today = new Date();
-document.getElementById("date").innerText = today.toLocaleDateString();
+/* ====== Config ====== */
+const TASKS = [
+  { id:"duo",   label:"Duolingo 15分", block:"朝" },
+  { id:"pata",  label:"パタプラ 30分（シャドー）", block:"朝" },
+  { id:"solo",  label:"独り言 15分（今日のテーマ）", block:"朝" },
+  { id:"quick", label:"瞬発：日本語→英語（止まらない）", block:"昼" },
+  { id:"talk",  label:"英会話 30–40分（説明系）", block:"夜" },
+  { id:"review",label:"録音レビュー＋言い直し", block:"夜" }
+];
 
-const weeks = [
+// Week themes
+const WEEKS = [
  {s:"2026-02-22",e:"2026-02-28",t:"Week1｜留学の言語化＋自己紹介（3分／5分）"},
  {s:"2026-03-01",e:"2026-03-07",t:"Week2｜職務経歴（Accenture）を英語で語る"},
  {s:"2026-03-08",e:"2026-03-14",t:"Week3｜プロジェクト説明（背景→課題→判断→成果）"},
@@ -60,26 +91,169 @@ const weeks = [
  {s:"2026-03-31",e:"2026-03-31",t:"Week7｜最終仕上げ（10分ノンストップ）"}
 ];
 
-function inRange(d,s,e){
- const D=new Date(d),S=new Date(s),E=new Date(e);
- return D>=S && D<=E;
+/* ====== Helpers ====== */
+function pad(n){ return String(n).padStart(2,"0"); }
+function iso(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function parseISO(s){ return new Date(s+"T00:00:00"); }
+function inRange(dayISO,s,e){
+  const D=parseISO(dayISO), S=parseISO(s), E=parseISO(e);
+  return D>=S && D<=E;
+}
+function keyForDay(dayISO){ return "day:"+dayISO; }
+
+function initDay(dayISO){
+  const k = keyForDay(dayISO);
+  if(localStorage.getItem(k)) return;
+  const obj = { tasks: {} };
+  TASKS.forEach(t => obj.tasks[t.id]=false);
+  localStorage.setItem(k, JSON.stringify(obj));
 }
 
-const w = weeks.find(x=>inRange(today,x.s,x.e));
-document.getElementById("week").innerText = w ? w.t : "（期間外）";
+function loadDay(dayISO){
+  initDay(dayISO);
+  return JSON.parse(localStorage.getItem(keyForDay(dayISO)));
+}
+function saveDay(dayISO, obj){
+  localStorage.setItem(keyForDay(dayISO), JSON.stringify(obj));
+}
 
-document.querySelectorAll(".task").forEach((t,i)=>{
- if(localStorage["t"+i]) t.classList.add("done");
- t.onclick=()=>{
-   t.classList.toggle("done");
-   localStorage["t"+i]=t.classList.contains("done");
- }
+// Progress (shown as done/total)
+function progress(dayObj){
+  const vals = Object.values(dayObj.tasks || {});
+  const total = vals.length;
+  const done = vals.filter(Boolean).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  return {done,total,pct};
+}
+
+// ★ Achieved definition (B): morning + night required, midday optional
+function isDayAchieved(dayObj){
+  const t = dayObj.tasks || {};
+  const morningDone = !!t.duo && !!t.pata && !!t.solo;
+  const nightDone   = !!t.talk && !!t.review;
+  return morningDone && nightDone;
+}
+
+/* ====== Today Render ====== */
+const today = new Date();
+const todayISO = iso(today);
+document.getElementById("date").innerText = today.toLocaleDateString();
+
+const wk = WEEKS.find(w => inRange(todayISO, w.s, w.e));
+document.getElementById("week").innerText = wk ? wk.t : "（期間外）";
+
+// Load today's data
+function updateUI(){
+  const day = loadDay(todayISO);
+
+  // tasks reflect
+  document.querySelectorAll(".task[data-task]").forEach(el => {
+    const id = el.getAttribute("data-task");
+    el.classList.toggle("done", !!day.tasks[id]);
+  });
+
+  // achieved badge
+  const achieved = isDayAchieved(day);
+  const badge = document.getElementById("achieveBadge");
+  badge.textContent = achieved ? "✅ 達成（朝＋夜）" : "— 未達成";
+
+  // stats + history
+  renderStatsAndHistory();
+}
+
+document.querySelectorAll(".task[data-task]").forEach(el => {
+  el.addEventListener("click", () => {
+    const id = el.getAttribute("data-task");
+    const day = loadDay(todayISO);
+    day.tasks[id] = !day.tasks[id];
+    saveDay(todayISO, day);
+    updateUI();
+  });
 });
 
-function reset(){
- localStorage.clear();
- location.reload();
+document.getElementById("resetBtn").addEventListener("click", () => {
+  // reset today only
+  localStorage.removeItem(keyForDay(todayISO));
+  updateUI();
+});
+
+/* ====== Streak / Total / History ====== */
+function computeStreak(){
+  // streak = consecutive achieved days ending today (or yesterday if today not achieved)
+  let streak = 0;
+  let d = new Date(today.getTime());
+
+  const td = loadDay(todayISO);
+  if(!isDayAchieved(td)){
+    d.setDate(d.getDate()-1);
+  }
+
+  while(true){
+    const di = iso(d);
+    const obj = loadDay(di);
+    if(!isDayAchieved(obj)) break;
+    streak += 1;
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
 }
+
+function countTotalAchievedDays(){
+  let total = 0;
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(!k || !k.startsWith("day:")) continue;
+    try {
+      const obj = JSON.parse(localStorage.getItem(k));
+      if(obj && obj.tasks && isDayAchieved(obj)) total += 1;
+    } catch(e){}
+  }
+  return total;
+}
+
+function renderStatsAndHistory(){
+  const streak = computeStreak();
+  const totalDays = countTotalAchievedDays();
+  document.getElementById("streak").textContent = String(streak);
+  document.getElementById("totalDays").textContent = String(totalDays);
+
+  const stats = document.getElementById("stats");
+  stats.innerHTML = `基準：<b>朝（3項目）＋夜（2項目）</b>で達成（昼は任意）`;
+
+  const hist = document.getElementById("history");
+  hist.innerHTML = "";
+
+  for(let offset=0; offset<14; offset++){
+    const d = new Date(today.getTime());
+    d.setDate(d.getDate()-offset);
+    const di = iso(d);
+
+    const obj = loadDay(di);
+    const p = progress(obj);
+    const achieved = isDayAchieved(obj);
+
+    const row = document.createElement("div");
+    row.className = "task";
+    row.innerHTML = `
+      <div>
+        <b>${di}｜${p.done}/${p.total}（${p.pct}%）</b>
+        <div class="small">${achieved ? "✅ 達成（朝＋夜）" : "— 未達成"}</div>
+      </div>
+    `;
+
+    row.addEventListener("click", () => {
+      const t = obj.tasks || {};
+      const lines = TASKS.map(x => `${t[x.id] ? "✅" : "⬜️"} ${x.label}`).join("\n");
+      const head = `${di}\n${p.done}/${p.total}（${p.pct}%）\n${achieved ? "✅ 達成（朝＋夜）" : "— 未達成"}\n`;
+      alert(head + "\n" + lines);
+    });
+
+    hist.appendChild(row);
+  }
+}
+
+updateUI();
 </script>
+
 </body>
 </html>
