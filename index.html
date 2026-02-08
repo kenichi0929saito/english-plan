@@ -31,12 +31,15 @@
       今週のテーマ：<b id="week"></b>
     </div>
     <div class="small" style="margin-top:8px">
-      連続達成: <b id="streak">0</b> 日 / 累計達成日: <b id="totalDays">0</b> 日（朝＋夜で達成）
+      連続達成: <b id="streak">0</b> 日 / 累計達成日: <b id="totalDays">0</b> 日
+      <div class="small" style="margin-top:6px">
+        基準：通常は<b>朝＋夜</b>で達成（昼は任意）／旅行週(3/24-3/30)は<b>Duolingo＋独り言</b>で達成
+      </div>
     </div>
   </div>
 
   <div class="card">
-    <h2>朝 1h（達成条件）</h2>
+    <h2>朝 1h（通常：達成条件）</h2>
     <div class="task" data-task="duo">Duolingo 15分</div>
     <div class="task" data-task="pata">パタプラ 30分（シャドー）</div>
     <div class="task" data-task="solo">独り言 15分（今日のテーマ）</div>
@@ -48,9 +51,15 @@
   </div>
 
   <div class="card">
-    <h2>夜 1.5h（達成条件）</h2>
+    <h2>夜 1.5h（通常：達成条件）</h2>
     <div class="task" data-task="talk">英会話 30–40分（説明系）</div>
     <div class="task" data-task="review">録音レビュー＋言い直し</div>
+  </div>
+
+  <div class="card">
+    <h2>旅行週（3/24–3/30）オプション</h2>
+    <div class="small">旅行週は「維持が勝ち」。下は任意（できたら★が付きます）</div>
+    <div class="task" data-task="travelReal">（旅行）実地英語：1回話す（任意）</div>
   </div>
 
   <div class="card">
@@ -72,13 +81,17 @@
 <script>
 /* ====== Config ====== */
 const TASKS = [
-  { id:"duo",   label:"Duolingo 15分", block:"朝" },
-  { id:"pata",  label:"パタプラ 30分（シャドー）", block:"朝" },
-  { id:"solo",  label:"独り言 15分（今日のテーマ）", block:"朝" },
-  { id:"quick", label:"瞬発：日本語→英語（止まらない）", block:"昼" },
-  { id:"talk",  label:"英会話 30–40分（説明系）", block:"夜" },
-  { id:"review",label:"録音レビュー＋言い直し", block:"夜" }
+  { id:"duo",       label:"Duolingo 15分", block:"朝" },
+  { id:"pata",      label:"パタプラ 30分（シャドー）", block:"朝" },
+  { id:"solo",      label:"独り言 15分（今日のテーマ）", block:"朝" },
+  { id:"quick",     label:"瞬発：日本語→英語（止まらない）", block:"昼" },
+  { id:"talk",      label:"英会話 30–40分（説明系）", block:"夜" },
+  { id:"review",    label:"録音レビュー＋言い直し", block:"夜" },
+  { id:"travelReal",label:"（旅行）実地英語：1回話す（任意）", block:"任意" }
 ];
+
+const TRAVEL_START = "2026-03-24";
+const TRAVEL_END   = "2026-03-30";
 
 // Week themes
 const WEEKS = [
@@ -108,7 +121,6 @@ function initDay(dayISO){
   TASKS.forEach(t => obj.tasks[t.id]=false);
   localStorage.setItem(k, JSON.stringify(obj));
 }
-
 function loadDay(dayISO){
   initDay(dayISO);
   return JSON.parse(localStorage.getItem(keyForDay(dayISO)));
@@ -117,7 +129,6 @@ function saveDay(dayISO, obj){
   localStorage.setItem(keyForDay(dayISO), JSON.stringify(obj));
 }
 
-// Progress (shown as done/total)
 function progress(dayObj){
   const vals = Object.values(dayObj.tasks || {});
   const total = vals.length;
@@ -126,9 +137,18 @@ function progress(dayObj){
   return {done,total,pct};
 }
 
-// ★ Achieved definition (B): morning + night required, midday optional
-function isDayAchieved(dayObj){
+function isTravelWeek(dayISO){
+  return dayISO >= TRAVEL_START && dayISO <= TRAVEL_END;
+}
+
+// ★ Achieved definition:
+// Normal: morning(duo+pata+solo) + night(talk+review) required (midday optional)
+// Travel week: duo + solo required (maintain mode)
+function isDayAchieved(dayObj, dayISO){
   const t = dayObj.tasks || {};
+  if(isTravelWeek(dayISO)){
+    return !!t.duo && !!t.solo;
+  }
   const morningDone = !!t.duo && !!t.pata && !!t.solo;
   const nightDone   = !!t.talk && !!t.review;
   return morningDone && nightDone;
@@ -142,22 +162,20 @@ document.getElementById("date").innerText = today.toLocaleDateString();
 const wk = WEEKS.find(w => inRange(todayISO, w.s, w.e));
 document.getElementById("week").innerText = wk ? wk.t : "（期間外）";
 
-// Load today's data
 function updateUI(){
   const day = loadDay(todayISO);
 
-  // tasks reflect
   document.querySelectorAll(".task[data-task]").forEach(el => {
     const id = el.getAttribute("data-task");
     el.classList.toggle("done", !!day.tasks[id]);
   });
 
-  // achieved badge
-  const achieved = isDayAchieved(day);
+  const achieved = isDayAchieved(day, todayISO);
   const badge = document.getElementById("achieveBadge");
-  badge.textContent = achieved ? "✅ 達成（朝＋夜）" : "— 未達成";
+  badge.textContent = achieved
+    ? (isTravelWeek(todayISO) ? "✅ 達成（旅行：維持）" : "✅ 達成（朝＋夜）")
+    : "— 未達成";
 
-  // stats + history
   renderStatsAndHistory();
 }
 
@@ -172,26 +190,24 @@ document.querySelectorAll(".task[data-task]").forEach(el => {
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
-  // reset today only
   localStorage.removeItem(keyForDay(todayISO));
   updateUI();
 });
 
 /* ====== Streak / Total / History ====== */
 function computeStreak(){
-  // streak = consecutive achieved days ending today (or yesterday if today not achieved)
   let streak = 0;
   let d = new Date(today.getTime());
 
   const td = loadDay(todayISO);
-  if(!isDayAchieved(td)){
+  if(!isDayAchieved(td, todayISO)){
     d.setDate(d.getDate()-1);
   }
 
   while(true){
     const di = iso(d);
     const obj = loadDay(di);
-    if(!isDayAchieved(obj)) break;
+    if(!isDayAchieved(obj, di)) break;
     streak += 1;
     d.setDate(d.getDate()-1);
   }
@@ -203,10 +219,11 @@ function countTotalAchievedDays(){
   for(let i=0; i<localStorage.length; i++){
     const k = localStorage.key(i);
     if(!k || !k.startsWith("day:")) continue;
-    try {
+    try{
+      const di = k.slice(4); // "day:" length = 4
       const obj = JSON.parse(localStorage.getItem(k));
-      if(obj && obj.tasks && isDayAchieved(obj)) total += 1;
-    } catch(e){}
+      if(obj && obj.tasks && isDayAchieved(obj, di)) total += 1;
+    }catch(e){}
   }
   return total;
 }
@@ -218,7 +235,7 @@ function renderStatsAndHistory(){
   document.getElementById("totalDays").textContent = String(totalDays);
 
   const stats = document.getElementById("stats");
-  stats.innerHTML = `基準：<b>朝（3項目）＋夜（2項目）</b>で達成（昼は任意）`;
+  stats.innerHTML = `通常：<b>朝＋夜</b>で達成（昼は任意）／旅行週：<b>Duolingo＋独り言</b>で達成。旅行週で「実地英語」を✅すると <b>★</b> が付きます。`;
 
   const hist = document.getElementById("history");
   hist.innerHTML = "";
@@ -230,21 +247,23 @@ function renderStatsAndHistory(){
 
     const obj = loadDay(di);
     const p = progress(obj);
-    const achieved = isDayAchieved(obj);
+    const achieved = isDayAchieved(obj, di);
+    const star = (isTravelWeek(di) && (obj.tasks || {}).travelReal) ? " ★" : "";
 
     const row = document.createElement("div");
     row.className = "task";
     row.innerHTML = `
       <div>
         <b>${di}｜${p.done}/${p.total}（${p.pct}%）</b>
-        <div class="small">${achieved ? "✅ 達成（朝＋夜）" : "— 未達成"}</div>
+        <div class="small">${achieved ? `✅ 達成${star}` : "— 未達成"}</div>
       </div>
     `;
 
     row.addEventListener("click", () => {
       const t = obj.tasks || {};
       const lines = TASKS.map(x => `${t[x.id] ? "✅" : "⬜️"} ${x.label}`).join("\n");
-      const head = `${di}\n${p.done}/${p.total}（${p.pct}%）\n${achieved ? "✅ 達成（朝＋夜）" : "— 未達成"}\n`;
+      const mode = isTravelWeek(di) ? "旅行週：達成=Duolingo＋独り言" : "通常：達成=朝＋夜";
+      const head = `${di}\n${p.done}/${p.total}（${p.pct}%）\n${achieved ? "✅ 達成" : "— 未達成"}${star}\n(${mode})\n`;
       alert(head + "\n" + lines);
     });
 
