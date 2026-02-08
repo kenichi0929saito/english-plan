@@ -16,6 +16,10 @@ button{width:100%;padding:10px;border-radius:10px;border:none;background:#4f6bff
 
 <body>
 <div class="card">
+<h2>今週のテーマ</h2>
+<div id="week"></div>
+</div>
+<div class="card">
 <h1>今日の英語（3h）</h1>
 <div class="small" id="date"></div>
 </div>
@@ -43,13 +47,39 @@ button{width:100%;padding:10px;border-radius:10px;border:none;background:#4f6bff
 </div>
 
 <script>
-const d=new Date();
-document.getElementById("date").innerText=d.toLocaleDateString();
+const today = new Date();
+document.getElementById("date").innerText = today.toLocaleDateString();
+
+const weeks = [
+ {s:"2026-02-22",e:"2026-02-28",t:"Week1｜留学の言語化＋自己紹介（3分／5分）"},
+ {s:"2026-03-01",e:"2026-03-07",t:"Week2｜職務経歴（Accenture）を英語で語る"},
+ {s:"2026-03-08",e:"2026-03-14",t:"Week3｜プロジェクト説明（背景→課題→判断→成果）"},
+ {s:"2026-03-15",e:"2026-03-21",t:"Week4｜転職理由＋ABeam志向"},
+ {s:"2026-03-22",e:"2026-03-23",t:"Week5｜海外勤務志向（欧州第一／ASEAN第二）"},
+ {s:"2026-03-24",e:"2026-03-30",t:"Week6｜旅行週：維持＋実地英語"},
+ {s:"2026-03-31",e:"2026-03-31",t:"Week7｜最終仕上げ（10分ノンストップ）"}
+];
+
+function inRange(d,s,e){
+ const D=new Date(d),S=new Date(s),E=new Date(e);
+ return D>=S && D<=E;
+}
+
+const w = weeks.find(x=>inRange(today,x.s,x.e));
+document.getElementById("week").innerText = w ? w.t : "（期間外）";
+
 document.querySelectorAll(".task").forEach((t,i)=>{
  if(localStorage["t"+i]) t.classList.add("done");
- t.onclick=()=>{t.classList.toggle("done");localStorage["t"+i]=t.classList.contains("done")}
+ t.onclick=()=>{
+   t.classList.toggle("done");
+   localStorage["t"+i]=t.classList.contains("done");
+ }
 });
-function reset(){localStorage.clear();location.reload()}
+
+function reset(){
+ localStorage.clear();
+ location.reload();
+}
 </script>
 </body>
 </html>
